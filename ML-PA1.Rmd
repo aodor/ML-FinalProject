@@ -1,0 +1,69 @@
+---
+title: "ML-PA1"
+author: "Alberto Odor"
+date: "Friday, June 20, 2014"
+output: html_document
+---
+#### Reading and splitting the training data
+Both training and testing sets were cleaned, eliminating al variables with NULL or N/A cases as well as name, and other variables not related to measurements. The remaining sets had 53 variables each and in the cases of the training set the last variable was classe (A,B,C,D,E) which was the factor variable for the analysis. In the case of the testing data the 53th variable was the subject number 1-20 for the predictions.
+Splitting was done using the caret package and a 20% of the cases was used to have around 4000 cases.
+
+```{r reading and splitting the training data}
+
+# Reading the trainig data
+exercise <- read.csv("pml-training.csv")
+dim(exercise)
+#[1] 19622    53
+
+# Splitting the data in 20% training (TO HAVE APROX 4000 TRAINING RECORDS).
+library(caret)
+set.seed(1234) # seed for the splitting process
+
+inTrain <- createDataPartition(y=exercise$classe, p=0.2, list=FALSE)
+training <- exercise[inTrain,]
+crossVal <- exercise[-inTrain,]
+
+```
+#### Training the model
+The model was trained with the Random Forest library using the 52 predictors with Bootstrap re-sampling (25 times). Final Accuracy was 96.5%
+
+```{r training the model}
+
+library(randomForest)
+set.seed(1234)
+
+# Now we run the model through Random Forest 
+
+modFit <- train(classe ~ ., data=training, method="rf", prox=TRUE)
+
+modFit # to see the results
+
+#====================================================================
+```
+#### Cross validation
+Cross validation was done by boosting and producing a confusion matrix which shows low classification errors.
+```{r cross validation}
+
+# The randomForest package can do bagging (boosting + aggregating) and
+# calculate the % of explained variance and give a confusion matrix:
+
+bag.exercise=randomForest(classe ~., data=training, mtry=52, importance=TRUE)
+# mtry=52 indicates the model to use all 52 predictors for each split of the tree
+
+bag.exercise  # to see the results
+
+```
+#### Prediccion
+Prediction of the 20 cases was done with the predict function and the results were all correct according to the grading system.
+```{r prediction}
+
+# Predicting testing values
+
+testing <- read.csv("pml-testing.csv")
+
+pred <- predict(modFit, testing)
+
+pred
+
+
+```
